@@ -5,7 +5,7 @@
 
    Start server - $ ruby app.rb // localhost:4567
 
--For Braintree
+- For Braintree
 
     - Go to braintree
 
