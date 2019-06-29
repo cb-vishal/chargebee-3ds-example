@@ -7,7 +7,7 @@
 
 - For Braintree
 
-    - Go to braintree
+    - Go to braintree folder
 
     - Start server: $ python -m SimpleHTTPServer 9999
 
