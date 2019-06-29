@@ -1,0 +1,85 @@
+<html>
+  <head>
+      <script src="https://js.stripe.com/v3/"></script>
+      <script src="https://js.stripe.com/v2/"></script>
+  </head>
+  <body>
+    <div id="card-element"></div>
+    <button id="card-button" data-secret="pi_1EoqfWCWU8SgOIrVeKSzvu0I_secret_H95WnxT2qmcbuJH4BlMKAo6Gy">
+      Submit Payment
+    </button>
+    <script>
+      var stripe = Stripe('pk_test_THSCVusZYdFEixmH8dimRRIl');
+      Stripe.setPublishableKey('pk_test_THSCVusZYdFEixmH8dimRRIl');
+    
+      var elements = stripe.elements();
+      var cardElement = elements.create('card');
+      cardElement.mount('#card-element');
+
+      var cardholderName = document.getElementById('cardholder-name');
+      var cardButton = document.getElementById('card-button');
+      var clientSecret = cardButton.dataset.secret;
+
+      cardButton.addEventListener('click', function(ev) {
+      stripe.createPaymentMethod('card', cardElement, {
+        // billing_details: {name: cardholderName.value}
+      }).then(function(result) {
+        if (result.error) {
+          // Show error in payment form
+        } else {
+          console.log(result.paymentMethod.id);
+           //Otherwise send paymentMethod.id to your server (see Step 2)
+           fetch('http://localhost:4567/ajax/confirm_payment', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ payment_method_id: result.paymentMethod.id })
+           }).then(function(result) {
+             // Handle server response (see Step 3)
+             result.json().then(function(json) {
+               handleServerResponse(json);
+             })
+           });
+        }
+      });
+    });
+      
+      function handleServerResponse(response) {
+  if (response.error) {
+    // Show error from server on payment form
+  } else if (response.requires_action) {
+    // Use Stripe.js to handle required card action
+    handleAction(response);
+  } else {
+
+    console.log("payment_intent_id: ", response.payment_intent_id, "success: ", response.success);
+    // Show success message
+  }
+}
+
+function handleAction(response) {
+  stripe.handleCardAction(
+    response.payment_intent_client_secret
+  ).then(function(result) {
+    if (result.error) {
+      // Show error in payment form
+    } else {
+      // The card action has been handled
+      // The PaymentIntent can be confirmed again on the server
+      fetch('http://localhost:4567/ajax/confirm_payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          payment_intent_id: result.paymentIntent.id
+        })
+      }).then(function(confirmResult) {
+        console.log("payment_intent_id: ", confirmResult.payment_intent_id, "success: ", confirmResult.success);
+        return confirmResult.json();
+      }).then(handleServerResponse);
+    }
+  });
+}
+    </script>
+  </body>
+</html>
