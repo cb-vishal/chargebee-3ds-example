@@ -5,9 +5,9 @@
 
    Start server - $ ruby app.rb // localhost:4567
 
--For Braintree
+- For Braintree
 
-    - Go to braintree
+    - Go to braintree folder
 
     - Start server: $ python -m SimpleHTTPServer 9999
 
