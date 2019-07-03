@@ -9,8 +9,8 @@ require 'braintree'
 adyen = Adyen::Client.new 
 adyen.env = :test
 # adyen.api_key = "AQErhmfxL4PIYhRAw0m/n3Q5qf3Va4NMH5RPWmBTCbxqdVh9nev0UTOvnsds3xDBXVsNvuR83LVYjEgiTGAH-6jn1Y74ao7ButC3mVV/nncKdeLWdD4MoDsuumXUPjhA=-E3SJck5grk98mIpv"
-adyen.ws_user = 'ws_089641@Company.Chargebee'
-adyen.ws_password = 'sGXRsPQKnL>M4jA=Bfe/Mnqwq'
+adyen.ws_user = 'ws@Company.Chargebee'
+adyen.ws_password = 'sKkmvzPgY}T8b-2K3n6n[%F*^'
 
 set :allow_origin, "*"
 set :allow_methods, "GET,HEAD,POST"
@@ -57,8 +57,9 @@ print data['nonce']
               :amount => "12",
               :merchant_account_id => "cb-local-test",
               :payment_method_nonce => data['nonce'],
-             :options => {
-              :submit_for_settlement => true
+              :options => {
+              :submit_for_settlement => true,
+              :store_in_vault => true,
              })
         
       if response.success?
@@ -100,9 +101,81 @@ post '/adyen/get_origin_key' do
   return [200, {'Content-Type' => 'application/json'}, response.body]
 end
 
+post '/adyen/webhook' do
+    data = JSON.parse(request.body.read.to_s)
+    puts data
+   end 
+
+post '/adyen/authrize' do
+   response = adyen.checkout.payments({
+    :merchantAccount => 'ChargebeeCOM',
+    :additionalData => {
+      "allow3DS2" => true
+    },
+    # "accountInfo": {
+    #   "accountCreationDate": "2019-01-17T13:42:40+01:00"
+    # },
+    "browserInfo":{     
+      "userAgent":"Mozilla\/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit\/537.36 (KHTML, like Gecko) Chrome\/70.0.3538.110 Safari\/537.36",
+      "acceptHeader":"text\/html,application\/xhtml+xml,application\/xml;q=0.9,image\/webp,image\/apng,*\/*;q=0.8",
+      "language":"nl-NL",
+      "colorDepth":24,
+      "screenHeight":723,
+      "screenWidth":1536,
+      "timeZoneOffset":0,
+      "javaEnabled": true
+    },
+    "billingAddress": {
+      "country": "US",
+      "street": "Haarlem",
+      "city": "New York",
+      "houseNumberOrName": "37",
+      "stateOrProvince": "CA",
+      "postalCode": "10BA"
+    },
+    "origin": "https://your-company.com/",
+    :channel => 'Web',
+    # :countryCode => 'NL',
+    :reference => "test",
+    :paymentMethod => {
+       :type => "scheme",
+       :number => "4212345678901245",
+       :expiryMonth => "08",
+        :expiryYear => "2018",
+        :cvc => "737"
+      },
+     :threeDSAuthenticationOnly => true,
+    :amount => {
+      :currency => 'EUR',
+      :value => 10000
+    },
+    :returnUrl => "https://your-company.com/checkout/"
+  })
+    return [200, {'Content-Type' => 'application/json'}, response.body]
+  end
+
+  post '/adyen/payment_details' do
+       data = JSON.parse(request.body.read.to_s)
+       puts data
+         adyen.instance_variable_set("@version", 49);
+         checkout = adyen.checkout
+         checkout.instance_variable_set("@version", 49)
+        response = checkout.payments.details({
+          :details => data['details'],
+          :paymentData => data['paymentData'],
+          :threeDSAuthenticationOnly => false
+           })
+      puts "=================================================="  
+      puts response.body  
+  return [200, {'Content-Type' => 'application/json'}, response.body]
+end
+
+
+
+
 post '/adyen/payments' do
   data = JSON.parse(request.body.read.to_s)
-  adyen.checkout.version = 46;
+  adyen.instance_variable_set("@version", 49);
   # response = adyen.checkout.payments({
   #   "amount": {
   #     "currency": "USD",
@@ -140,7 +213,9 @@ post '/adyen/payments' do
   #   "returnUrl": "https://your-company.com/checkout/",
   #   "merchantAccount": "ChargebeeCOM"
   # })
-  response = adyen.checkout.payments({
+  checkout = adyen.checkout
+  checkout.instance_variable_set("@version", 49)
+  response = checkout.payments({
     :merchantAccount => 'ChargebeeCOM',
     :additionalData => {
       "allow3DS2" => true
@@ -169,6 +244,7 @@ post '/adyen/payments' do
     "origin": "https://your-company.com/",
     :channel => 'Web',
     # :countryCode => 'NL',
+    :authenticationOnly => true,
     :reference => "test",
     :paymentMethod => data['paymentMethod'],
     :amount => {
@@ -177,7 +253,8 @@ post '/adyen/payments' do
     },
     :returnUrl => "https://your-company.com/checkout/"
   })
-  return [200, {'Content-Type' => 'application/json'}, response.body]
+  return [200, {'Content-Type' => 'application/json', "Access-Control-Allow-Origin" => "*", 
+"Access-Control-Allow-Credentials" => "true" }, response.body]
 end
 
 

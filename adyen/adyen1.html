@@ -1,0 +1,86 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" charset="utf-8">
+    <link rel="stylesheet" href="https://checkoutshopper-test.adyen.com/checkoutshopper/sdk/3.0.0/adyen.css"/>
+  </head>
+  <body>
+    <script src="https://checkoutshopper-test.adyen.com/checkoutshopper/sdk/3.0.0/adyen.js"></script>
+    <div id="dropin"></div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+          fetch("http://localhost:4567/adyen/payment_methods").then((response) => {
+
+            return response.json()
+          }).then((response) => {
+            console.log(response);
+            const configuration = {
+              locale: "en_US",
+              environment: "test",
+              originKey: "pub.v2.7814774646890089.aHR0cDovL2xvY2FsaG9zdDo5OTk5.DP8sg4Jwd_v_CuzVKVSIJnV-OzBZW2Z06PEOkwfm03s",
+              paymentMethodsResponse: response
+            };
+          
+            const checkout = new AdyenCheckout(configuration);
+    
+            const dropin = checkout
+            .create('dropin', {
+
+              paymentMethodsConfiguration: {
+                    card: { //Example optional configuration for Cards
+                  holderNameRequired: true,
+                   enableStoreDetails: true,
+                   name: 'Credit or debit card'
+                   }
+                }   ,
+               onSubmit: (state, dropin) => {
+                  // console.log("test");
+                   fetch("http://localhost:4567/adyen/payments", 
+                    {
+                       method: 'POST',
+                        headers: {
+                             'Content-Type': 'application/json'
+                       },
+                       body: JSON.stringify(state.data)
+                      }
+                   ).then((response) => {
+                    return response.json();
+                   }).then((result) => {
+                        console.log(result)
+                       dropin.handleAction(result.action);
+                       // Drop-in will handle the action object from the /payments response
+                      })
+                  // });
+
+                  
+                 },
+                  onAdditionalDetails: (state, dropin) => {
+                  fetch("http://localhost:4567/adyen/payment_details", 
+                    {
+                       method: 'POST',
+                        headers: {
+                             'Content-Type': 'application/json'
+                       },
+                       body: JSON.stringify(state.data)
+                      }
+                   ).then((response) => {
+                    return response.json();
+                   }).then((result) => {
+                        console.log(result)
+                       dropin.handleAction(result.action);
+                       // Drop-in will handle the action object from the /payments response
+                      })
+                  },
+                  onError: (error) =>{
+                    console.log(error)
+                  }
+                
+               }).mount('#dropin');
+    
+        });
+       });
+      </script>
+      
+  </body>
+  
+</html>
