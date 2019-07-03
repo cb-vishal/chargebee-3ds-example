@@ -22,4 +22,4 @@
 
      - For new card use: http://localhost:9999/adyen1.html
     
-     - To listen webook , configure the url: <ngrok>/adyen/webhook
+     - To listen webook , configure the url: http://ngrok.in/adyen/webhook
