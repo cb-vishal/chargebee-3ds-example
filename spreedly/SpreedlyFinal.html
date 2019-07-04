@@ -1,0 +1,54 @@
+<html>
+  <head>
+     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  </head>
+  <body>
+    <div id="success" style="visibility: hidden;">
+      <h1> payment succeeded</h1>
+    </div>
+    <div id="failure" style="visibility: hidden;">
+      <h1>payment failed</h1>
+    </div>
+    <script>
+
+      $(document).ready(function () {
+        
+            if (window.location.href.indexOf('?transaction_token=') > 0) {
+                let params = (new URL(document.location)).searchParams;
+let token = params.get("transaction_token");
+console.log(token);
+capture(token);
+            }
+        
+    });
+    
+    function capture(result)
+    {
+      console.log(result);
+      fetch('http://localhost:4567/spreedly/capture', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          token_id: result
+        })
+      }).then( res => res.json()).then(json => displaymessage(json)
+      );
+      }
+
+      function displaymessage(response)
+      {
+        if(response.succeeded == true)
+        {
+            document.getElementById('success').style.visibility = "visible";
+        }
+        else
+        {
+            document.getElementById('failure').style.visibility = "visible";
+        }
+        
+      }
+    </script>
+  </body>
+</html>

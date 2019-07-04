@@ -4,7 +4,7 @@ require "sinatra/cors"
 require 'adyen-ruby-api-library'
 require 'byebug'
 require 'braintree'
-
+require 'spreedly'
 
 adyen = Adyen::Client.new 
 adyen.env = :test
@@ -17,6 +17,30 @@ set :allow_methods, "GET,HEAD,POST"
 set :allow_headers, "content-type,if-modified-since"
 Stripe.api_key = 'sk_test_TD6l07P6J8pKb6WMwSmWz2nE'
 
+################### Spreedly
+
+  env = Spreedly::Environment.new("B6bJMGhty3Xei2UJ7xIc1QzQHH1", "Mfn8SIp5QjAp48ntS1DtM3MAKwKpTn359Sgxpgptsez3PiDfPUfzLxmwMx3msve2")
+
+  post '/spreedly/authorize' do
+  data = JSON.parse(request.body.read.to_s)
+
+begin
+  auth = env.authorize_on_gateway("WXd7M0egSDq351BWM9OjH5nrkTT", data["token_id"], 4432, retain_on_success: true, attempt_3dsecure: true, callback_url: "https://www.google.com", redirect_url: "http://www.localtest.com:9999/spreedly/SpreedlyFinal.html")
+return [200, {'Content-Type' => 'application/json'}, {succeeded: auth.succeeded, token: auth.token, checkout_form: auth.checkout_form}.to_json]
+end
+end
+
+post '/spreedly/capture' do
+  data = JSON.parse(request.body.read.to_s)
+    trans = env.find_transaction(data["token_id"])
+   if(trans.succeeded == true) then
+      capture =  env.capture_transaction(data["token_id"])
+     return [200, {'Content-Type' => 'application/json'}, {succeeded: capture.succeeded}.to_json]
+    end
+      return [200, {'Content-Type' => 'application/json'}, {succeeded: false}.to_json]
+end
+
+###################
 
 #################### braintreee
 

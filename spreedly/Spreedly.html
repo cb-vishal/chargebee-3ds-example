@@ -1,0 +1,84 @@
+<html>
+  <head>
+     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  </head>
+  <body>
+    <form>
+      <div class="card-errors"></div>
+
+  <div class="form-row">
+    <label>
+      <span>Card number</span>
+      <input type="text" size="16" data-stripe="number" id ="cardnumber">
+    </label>
+  </div>
+
+    </form>
+    <button id="card-button">
+      Submit Payment
+    </button>
+    <script>
+     //4556761029983886
+    
+      var cardButton = document.getElementById('card-button');
+  
+      cardButton.addEventListener('click', function(ev) {
+            var data = {
+  "payment_method": {
+    "credit_card": {
+      "first_name": "Joe",
+      "last_name": "Jones",
+      "number": document.getElementById('cardnumber').value,
+      "verification_value": "423",
+      "month": "3",
+      "year": "2032"
+    },
+    "email": "joey@example.com",
+    "metadata": {
+      "key": "string value",
+      "another_key": 123,
+      "final_key": true
+    }
+  }
+}
+
+        fetch('https://core.spreedly.com/v1/payment_methods.json', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Basic ' + btoa("B6bJMGhty3Xei2UJ7xIc1QzQHH1" + ":" + "Mfn8SIp5QjAp48ntS1DtM3MAKwKpTn359Sgxpgptsez3PiDfPUfzLxmwMx3msve2"),
+        },
+        body: JSON.stringify(data)
+      }).then(res=> res.json()).
+        then(json => authorize(json.transaction.payment_method.token));
+    });
+
+
+      function authorize(token)
+      {
+        var url = "http://localhost:4567/spreedly/authorize";
+        fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token_id: token
+        })
+      }).then(res=> res.json()).
+        then(json => handlepopup(json));
+        
+      }
+    
+    function handlepopup(response)
+    {
+      if(response.succeeded == false && response.checkout_form != null)
+      {
+        var win = window.open("", "Spreedly authentication", "toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=780,height=200,top="+(screen.height-400)+",left="+(screen.width-840));
+win.document.body.innerHTML = response.checkout_form;
+      }
+      
+    }
+    </script>
+  </body>
+</html>
