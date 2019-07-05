@@ -25,7 +25,7 @@ Stripe.api_key = 'sk_test_TD6l07P6J8pKb6WMwSmWz2nE'
   data = JSON.parse(request.body.read.to_s)
 
 begin
-  auth = env.authorize_on_gateway("WXd7M0egSDq351BWM9OjH5nrkTT", data["token_id"], 4432, retain_on_success: true, attempt_3dsecure: true, callback_url: "https://www.google.com", redirect_url: "http://www.localtest.com:9999/spreedly/SpreedlyFinal.html")
+  auth = env.authorize_on_gateway("WXd7M0egSDq351BWM9OjH5nrkTT", data["token_id"], 4432, retain_on_success: true, attempt_3dsecure: true, callback_url: "https://www.google.com", redirect_url: "http://www.localhost:9999/spreedly/SpreedlyFinal.html")
 return [200, {'Content-Type' => 'application/json'}, {succeeded: auth.succeeded, token: auth.token, checkout_form: auth.checkout_form}.to_json]
 end
 end
