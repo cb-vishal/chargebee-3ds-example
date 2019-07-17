@@ -265,7 +265,7 @@ post '/adyen/payments' do
       "stateOrProvince": "CA",
       "postalCode": "10BA"
     },
-    "origin": "https://your-company.com/",
+    "origin": "http://localhost:9999",
     :channel => 'Web',
     # :countryCode => 'NL',
     :authenticationOnly => true,
