@@ -1,0 +1,64 @@
+<html>
+  <head>
+      <script src="https://js.stripe.com/v3/"></script>
+      <script src="https://js.stripe.com/v2/"></script>
+  </head>
+  <body>
+    <div id="card-element"></div>
+
+      existingToken: <input type="text" id="token" placeholder="pm_1F885QA1CBzZa8K11xbHn5OQ" /> <br/>
+
+      customer id: <input type="text" id="customer" placeholder="cus_FagaGc7iULsdS5"  />
+
+    <button id="card-button">
+      Submit Payment
+    </button>
+    <script>
+      var stripe = Stripe('pk_test_THSCVusZYdFEixmH8dimRRIl');
+      Stripe.setPublishableKey('pk_test_THSCVusZYdFEixmH8dimRRIl');
+    
+      var cardButton = document.getElementById('card-button');
+
+      cardButton.addEventListener('click', function(ev) {
+       
+          payment_method_id = document.getElementById('token').value;
+          cust_id = document.getElementById('customer').value;
+
+           fetch('http://localhost:4567/ajax/setup_intent_with_customer', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ customer_id: cust_id })
+           }).then(function(result) {
+             // Handle server response (see Step 3)
+             result.json().then(function(json) {
+               handleAction(json);
+             })
+           });
+      
+    });
+      
+
+function handleAction(response) {
+
+  stripe.handleCardSetup(
+    response.payment_intent_client_secret, {
+    payment_method: payment_method_id,
+  }
+  ).then(function(result) {
+    if (result.error) {
+      // Show error in payment form
+    } else {
+      stripe.retrieveSetupIntent(response.payment_intent_client_secret).then(function(result) {
+      if(result.setupIntent)
+      {
+        console.log(result.setupIntent.id);
+        console.log(result.setupIntent.status);
+        console.log(result.setupIntent);
+      }
+  });
+    }
+  });
+}
+    </script>
+  </body>
+</html>

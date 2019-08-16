@@ -1,0 +1,62 @@
+<html>
+  <head>
+      <script src="https://js.stripe.com/v3/"></script>
+      <script src="https://js.stripe.com/v2/"></script>
+  </head>
+  <body>
+    <div id="card-element"></div>
+    <button id="card-button">
+      Submit Payment
+    </button>
+    <script>
+      var stripe = Stripe('pk_test_THSCVusZYdFEixmH8dimRRIl');
+      Stripe.setPublishableKey('pk_test_THSCVusZYdFEixmH8dimRRIl');
+    
+      var elements = stripe.elements();
+      var cardElement = elements.create('card');
+      cardElement.mount('#card-element');
+
+      var payment_method_id;
+      var cardholderName = document.getElementById('cardholder-name');
+      var cardButton = document.getElementById('card-button');
+      var clientSecret = cardButton.dataset.secret;
+
+      cardButton.addEventListener('click', function(ev) {
+           fetch('http://localhost:4567/ajax/setup_intent', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+           }).then(function(result) {
+             // Handle server response (see Step 3)
+             result.json().then(function(json) {
+               handleAction(json);
+             })
+           });
+    });
+
+function handleAction(response) {
+
+  console.log(response);
+  stripe.handleCardSetup(
+    response.payment_intent_client_secret, cardElement,{
+      payment_method_data: {
+        billing_details: {name: "test"}
+      }
+    }
+  ).then(function(result) {
+    if (result.error) {
+      // Show error in payment form
+    } else {
+      stripe.retrieveSetupIntent(response.payment_intent_client_secret).then(function(result) {
+    if(result.setupIntent)
+    {
+      console.log(result.setupIntent.id);
+      console.log(result.setupIntent.status);
+       console.log(result.setupIntent);
+    }
+});
+    }
+  });
+}
+    </script>
+  </body>
+</html>

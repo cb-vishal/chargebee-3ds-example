@@ -45,9 +45,9 @@ end
 #################### braintreee
 
 Braintree::Configuration.environment = :sandbox
-Braintree::Configuration.merchant_id = "jszbnz6jgstn85rp"
-Braintree::Configuration.public_key = "x8xhgh2t68zz83fp"
-Braintree::Configuration.private_key = "ce975729cbad5bf5ab882a289818668e"
+Braintree::Configuration.merchant_id = "3gj8d33f84frhwk5"
+Braintree::Configuration.public_key = "sxhpwr64grbpmqtv"
+Braintree::Configuration.private_key = "04e07983013f1ed06b7fbb643bf8bbf2"
 
 #braintree = Braintree::Gateway.new(
  # :environment => :sandbox,
@@ -66,10 +66,16 @@ return [200, {'Content-Type' => 'application/json', "Access-Control-Allow-Origin
 "Access-Control-Allow-Credentials" => "true" }, {temp_token: nonce}.to_json]
 end
 
+get '/braintree/getpm' do
+  response = Braintree::PaymentMethodNonce.find('eba9addd-8f6c-09af-6c2a-b6e25a49fa43')
+
+  return [200, {'Content-Type' => 'application/json', "Access-Control-Allow-Origin" => "*", 
+"Access-Control-Allow-Credentials" => "true" }, {nonce: response.payment_method_nonce.payer_info}.to_json]
+end
 
 get '/braintree/client_token' do
  response =  Braintree::ClientToken.generate(
-  :merchant_account_id => 'cb-local-test'
+  :merchant_account_id => 'chargebee'
  )
 return [200, {'Content-Type' => 'application/json'}, response]
 end
@@ -79,11 +85,15 @@ data = JSON.parse(request.body.read.to_s)
 print data['nonce']  
         response = Braintree::Transaction.sale(
               :amount => "12",
-              :merchant_account_id => "cb-local-test",
+              :merchant_account_id => "chargebee",
               :payment_method_nonce => data['nonce'],
+              :customer_id => "270195243",
               :options => {
               :submit_for_settlement => true,
               :store_in_vault => true,
+              :three_d_secure => {
+                :required => true,
+              },
              })
         
       if response.success?
@@ -325,6 +335,31 @@ post '/ajax/confirm_payment' do
   end
 
   return generate_payment_response(intent)
+end
+
+post '/ajax/setup_intent' do
+  begin
+      setup_intent = Stripe::SetupIntent.create(
+      )
+  rescue Stripe::CardError => e
+    # Display error on client
+    return [200, { error: e.message }.to_json]
+  end
+  return [200, {payment_intent_client_secret: setup_intent.client_secret}.to_json]
+end
+
+post '/ajax/setup_intent_with_customer' do
+   data = JSON.parse(request.body.read.to_s)
+  begin
+      setup_intent = Stripe::SetupIntent.create({
+        customer: data["customer_id"], 
+      }
+      )
+  rescue Stripe::CardError => e
+    # Display error on client
+    return [200, { error: e.message }.to_json]
+  end
+  return [200, {payment_intent_client_secret: setup_intent.client_secret}.to_json]
 end
 
 def generate_payment_response(intent)
