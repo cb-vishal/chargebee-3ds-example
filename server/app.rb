@@ -6,6 +6,7 @@ require 'byebug'
 require 'braintree'
 require 'spreedly'
 
+
 adyen = Adyen::Client.new 
 adyen.env = :test
 # adyen.api_key = "AQErhmfxL4PIYhRAw0m/n3Q5qf3Va4NMH5RPWmBTCbxqdVh9nev0UTOvnsds3xDBXVsNvuR83LVYjEgiTGAH-6jn1Y74ao7ButC3mVV/nncKdeLWdD4MoDsuumXUPjhA=-E3SJck5grk98mIpv"
@@ -14,8 +15,8 @@ adyen.ws_password = 'sKkmvzPgY}T8b-2K3n6n[%F*^'
 
 set :allow_origin, "*"
 set :allow_methods, "GET,HEAD,POST"
-set :allow_headers, "content-type,if-modified-since"
-Stripe.api_key = 'sk_test_TD6l07P6J8pKb6WMwSmWz2nE'
+set :allow_headers, "content-type,if-modified-since, Access-Control-Allow-Origin"
+Stripe.api_key = 'sk_test_25rN1aIBonFT27KbWLwj5aJ6'
 
 ################### Spreedly
 
@@ -360,6 +361,42 @@ post '/ajax/setup_intent_with_customer' do
     return [200, { error: e.message }.to_json]
   end
   return [200, {payment_intent_client_secret: setup_intent.client_secret}.to_json]
+end
+
+post '/ajax/ideal_charge' do
+   data = JSON.parse(request.body.read.to_s)
+  begin
+      charge_response = Stripe::Charge.create({
+        source: data["source_id"],
+        amount: 9999,
+        currency: 'eur', 
+      }
+      )
+  rescue Stripe::CardError => e
+    # Display error on client
+    return [200, { error: e.message }.to_json]
+  end
+  return [200, {'Content-Type' => 'application/json', "Access-Control-Allow-Origin" => "*", 
+"Access-Control-Allow-Credentials" => "true" }, charge_response.to_json]
+end
+
+post '/ajax/create_sepa_from_ideal' do
+   data = JSON.parse(request.body.read.to_s)
+  begin
+      source = Stripe::Source.create({
+  type: 'sepa_debit',
+  sepa_debit: {"ideal": data["source_id"]},
+  currency: 'eur',
+  owner: {
+    name: 'Jenny Rosen',
+  },
+})
+  rescue Stripe::CardError => e
+    # Display error on client
+    return [200, { error: e.message }.to_json]
+  end
+  return [200, {'Content-Type' => 'application/json', "Access-Control-Allow-Origin" => "*", 
+"Access-Control-Allow-Credentials" => "true" }, source.to_json]
 end
 
 def generate_payment_response(intent)

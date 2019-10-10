@@ -1,0 +1,60 @@
+<html>
+  <head>
+     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  </head>
+  <body>
+    Source : <input type="text" id="source" readonly="true" size="70" />
+   <button id="charge"> charge </button>
+   <h1 style="visibility: hidden;" id="success"> Sepa direct debit created source id: <p id="src_id"></p></h1>
+    <script>
+
+      var charge = document.getElementById('charge');
+      $(document).ready(function () {
+        
+            if (window.location.href.indexOf('?client_secret=') > 0) {
+                let params = (new URL(document.location)).searchParams;
+                let source = params.get("source");
+                document.getElementById("source").value = source;
+            }
+        
+      });
+
+      charge.addEventListener('click', function(ev) {
+       
+          var ideal_source = document.getElementById('source').value;
+
+           fetch('http://localhost:4567/ajax/ideal_charge', {
+             method: 'POST',
+             //headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({'source_id':ideal_source}),
+           }).then(function(result) {
+             // Handle server response (see Step 3)
+             result.json().then(function(json) {
+              if(json.status=="succeeded")
+              {
+                    fetch('http://localhost:4567/ajax/create_sepa_from_ideal', {
+                      method: 'POST',
+                       //headers: { 'Content-Type': 'application/json' },
+                       body: JSON.stringify({'source_id':ideal_source}),
+                     }).then(function(result){
+
+                          result.json().then(function(json){
+                            console.log(json);
+                            document.getElementById("src_id").innerHTML = json.id;
+                            document.getElementById('success').style.visibility = "visible";
+                            console.log(json.id);
+                          })
+
+                        });
+              }
+
+               console.log(json);
+
+             })
+           });
+      
+    });
+   
+    </script>
+  </body>
+</html>
